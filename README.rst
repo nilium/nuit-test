@@ -11,14 +11,14 @@ least I'm providing an incredibly simple renderer to test with.
 
 To build this, you'll need a few things:
 
-    * `nuit-ooc`_
-    * `ooc-sdl`_
-    * `ooc-sdl_image`_
-    * `ooc-glew`_
-    * SDL_
-    * SDL_Image_ (and any libraries it requires, such as libz, libpng, etc.)
-    * GLEW_
-    * `window.png`_ from `NUIT.gfx`_ (or create your own two-frame window image)
+* `nuit-ooc`_
+* `ooc-sdl`_
+* `ooc-sdl_image`_
+* `ooc-glew`_
+* SDL_
+* SDL_Image_ (and any libraries it requires, such as libz, libpng, etc.)
+* GLEW_
+* `window.png`_ from `NUIT.gfx`_ (or create your own two-frame window image)
 
 Under Mac OS, you'll also have to link the Cocoa and OpenGL frameworks.  I've
 provided a *buildtest* script that includes both, since I'm a Mac user and I'm
