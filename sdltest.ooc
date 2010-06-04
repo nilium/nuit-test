@@ -2,7 +2,6 @@ use nuit
 use sdl
 use glew
 
-import structs/[Stack, HashMap]
 import nuit/[GUI, Types, Image, Renderer, FramedWindow, NinePatchDrawable]
 
 import sdl
