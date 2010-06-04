@@ -10,6 +10,7 @@ isn't fun, nobody wants to write a renderer unless they have to, so at the very
 least I'm providing an incredibly simple renderer to test with.
 
 To build this, you'll need a few things:
+
     * `nuit-ooc`_
     * `ooc-sdl`_
     * `ooc-sdl_image`_
