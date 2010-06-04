@@ -269,84 +269,80 @@ TestView: class extends NView {
 /*** The Wooperton Plaza ***/
 
 main: func(argc: Int, argv: String*) {
+    event: SDLEvent
+    running := true
+    mousePosition: NPoint
+    
+    // sdl setup
     
     sdlInit(EnumSDLInitFlags initVideo)
     mainSurface := sdlSetVideoMode(800, 600, 32, EnumSDLSurfaceFlags opengl as UInt32 | EnumSDLGlattr doublebuffer as UInt32)
+    if (mainSurface == null) {
+        Exception new("Unable to set video mode") throw()
+    }
     
-    event: SDLEvent
-    running := true
-    
+    // gl setup
     glewInit()
+    
+    glClearColor(0.4, 0.4, 0.4, 1.0)
     
     glMatrixMode(GL_PROJECTION)
     glLoadIdentity()
     glMatrixMode(GL_MODELVIEW)
     glLoadIdentity()
     
-    rd := TestRenderer new()
-    
-    img := rd loadImageWithFrames("window.png", NSize new(256.0, 256.0), 2)
-    img = rd loadImageWithFrames("window.png", NSize new(256.0, 256.0), 2)
-    
-    x := 0.0
-    y := 0.0
-    
-//    img frameSize set(90.0, 128.0)
-//    img frameCount = 4
-    
-    drw: NDrawable = NNinePatchDrawable new(img, NSize new(5.0, 24.0), NSize new(5.0, 5.0), 1.0)
+    // gui setup
     
     gui := NGUI new()
     gui makeActive()
+    
+    rd := TestRenderer new()
     gui setRenderer(rd)
     
-    wnd: NFramedWindow = NFramedWindow new(NRect new(25.0, 64.0, 512.0, 256.0))
-    wnd _drawable = drw
+    windowImage := rd loadImageWithFrames("window.png", NSize new(256.0, 256.0), 2)
+    windowDrawable := NNinePatchDrawable new(windowImage, NSize new(5.0, 24.0), NSize new(5.0, 5.0), 1.0)
+    
+    wnd := NFramedWindow new(NRect new(25.0, 64.0, 512.0, 256.0))
+    // until skins are added, this unfortunately has to be done for every window
+    // (because I'm still faffing about with yajl and trying to avoid rolling
+    // my own parser for my own format)
+    wnd _drawable = windowDrawable
+    // don't ask me why I haven't ported addWindow yet.
     gui _windows add(wnd)
     
     wnd = NFramedWindow new(NRect new(25.0, 64.0, 512.0, 256.0))
-    wnd _drawable = drw
+    wnd _drawable = windowDrawable
     gui _windows add(wnd)
-    
-//    img = rd loadImage("shadow.png")
-    
-//    NFramedWindow _shadow = NNinePatchDrawable new(img, NSize new(14.0, 14.0), NSize new(14.0, 14.0), 1.0)
-    
     wnd addSubview(TestView new(NRect new(24.0, 24.0, 128.0, 80.0)))
-    
-    drw1 := NNinePatchDrawable new(rd loadImage("pbar.tga"), NSize new(3.0, 3.0), NSize new(3.0, 3.0), 1.0)
-//    drw1 tilingMode = NTilingMode horizontal
-    drw2 := NNinePatchDrawable new(rd loadImage("pbarcover.tga"), NSize new(12.0, 7.0), NSize new(12.0, 7.0), 1.0)
-    drw3 := NPaddedDrawable new(drw1, NSize new(5.0, 5.0), NSize new(116.0, 5.0))
-    st := Stack<NDrawable> new()
-    st push(drw2)
-    st push(drw3)
-    drw4 := NMultiDrawable new(st)
-    
-    glClearColor(0.4, 0.4, 0.4, 1.0)
     
     while (running) {
         
+        /* using sdlWaitEvent will reduce the amount of CPU you're using and
+        more or less block the loop for most things.  Can be handy. */
+//        if (sdlWaitEvent(event&)) {
         while (sdlPollEvent(event&)) {
             match (event as UnionSDLEvent type) {
                 case EnumSDLEventType quit => running = false
                 
                 case EnumSDLEventType mousebuttonup =>
-                    x = event as UnionSDLEvent button as StructSDLMouseButtonEvent x as Float
-                    y = event as UnionSDLEvent button as StructSDLMouseButtonEvent y as Float
+                    // mousePosition set(event button x, event button y)
+                    mousePosition x = event as UnionSDLEvent button as StructSDLMouseButtonEvent x
+                    mousePosition y = event as UnionSDLEvent button as StructSDLMouseButtonEvent y
                     button := event as UnionSDLEvent button as StructSDLMouseButtonEvent button as Int
-                    gui pushMouseReleasedEvent(button, NPoint new(x, y))
+                    gui pushMouseReleasedEvent(button, mousePosition)
                     
                 case EnumSDLEventType mousebuttondown =>
-                    x = event as UnionSDLEvent button as StructSDLMouseButtonEvent x as Float
-                    y = event as UnionSDLEvent button as StructSDLMouseButtonEvent y as Float
+                    // mousePosition set(event button x, event button y)
+                    mousePosition x = event as UnionSDLEvent button as StructSDLMouseButtonEvent x
+                    mousePosition y = event as UnionSDLEvent button as StructSDLMouseButtonEvent y
                     button := event as UnionSDLEvent button as StructSDLMouseButtonEvent button as Int
-                    gui pushMousePressedEvent(button, NPoint new(x, y))
+                    gui pushMousePressedEvent(button, mousePosition)
                     
                 case EnumSDLEventType mousemotion =>
-                    x = event as UnionSDLEvent motion as StructSDLMouseMotionEvent x as Float
-                    y = event as UnionSDLEvent motion as StructSDLMouseMotionEvent y as Float
-                    gui pushMouseMoveEvent(NPoint new(x, y))
+                    // mousePosition set(event motion x, event motion y)
+                    mousePosition x = event as UnionSDLEvent motion as StructSDLMouseMotionEvent x
+                    mousePosition y = event as UnionSDLEvent motion as StructSDLMouseMotionEvent y
+                    gui pushMouseMoveEvent(mousePosition)
                 
                 case =>
                     continue
@@ -358,14 +354,6 @@ main: func(argc: Int, argv: String*) {
         glClear(GL_COLOR_BUFFER_BIT)
         
         gui draw()
-        
-        rd acquire()
-        rd setDrawingOrigin(NPoint new(0.0, 0.0))
-        ms := Time millisec() as NFloat
-//        drw1 setOffset(NPoint new(ms * 0.001, ms * 0.002))
-        drw4 drawInRect(rd, NRect new(50.0, 50.0, x, y), 0)
-        
-        rd release()
         
         sdlGlSwapBuffers()
     }
