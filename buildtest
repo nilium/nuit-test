@@ -1,12 +1,10 @@
 #!/bin/sh
 
-# This is included mainly for reference, I don't think most people will need
-# something like this, but I'm lazy
+# glew and frameworks included here because accounting for these on Mac OS is
+# the only source of joy in my life
 
 rock -clang -g \
-    +-L/opt/local/lib \
-    +-I/opt/local/include \
     +-framework +Cocoa \
     +-framework +OpenGL \
-    +-lglew \
+    -lglew \
     $*
