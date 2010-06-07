@@ -31,7 +31,6 @@ FontGlyph: class {
         bearing = NPoint new(metrics horiBearingX toFloat(), -metrics horiBearingY toFloat())
         advance = NPoint new(metrics horiAdvance toFloat(), -metrics vertAdvance toFloat())
         size = NSize new(metrics width toFloat(), metrics height toFloat())
-        "width: %f height: %f" format(size width, size height) println()
         _buffer()
     }
     
