@@ -299,6 +299,6 @@ TestFontData: class extends NFontData {
         Returns the font's baseline.
     */
     baseLine: func -> NFloat {
-        0.0
+        (face@ ascender/64) as NFloat
     }
 }
