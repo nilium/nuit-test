@@ -36,12 +36,12 @@ FontGlyph: class {
     }
     
     drawable?: func -> Bool { !(size width equals(0.0) || size height equals(0.0)) }
+    
     draw: func (renderer: TestRenderer, origin: NPoint) {
         if (!drawable?()) {
             return
         }
         
-        origin y += fontData lineHeight()
         origin add(bearing)
         loc := NRect new(origin, size)
         
