@@ -1,12 +1,15 @@
-use sdl, sdl_image, glew
+use nuit, sdl, sdl_image, glew, freetype2
 
 import nuit/[Types, Renderer, Image, Font]
 
-import structs/Stack
+import structs/[Stack]
 
+import freetype2
 import sdl
 import sdl_image
 import glew
+
+import TestFontData
 
 /** IMAGE DATA **/
 TestImageData: class extends NImageData {
@@ -44,11 +47,18 @@ TestRenderer: class extends NRenderer {
     states: Stack<TestRenderState>
     current: TestRenderState
     acquired: Int = 0
+    ftlib: FTLibrary
     
     init: func {
         states = Stack<TestRenderState> new()
         current drawing_region size = screenSize()
         current color = NColor white()
+        if (ftlib initFreeType() != 0)
+            Exception new(This, "Unable to init FreeType2") throw()
+    }
+    
+    __destroy__: func {
+        ftlib done()
     }
     
     fillColor: func -> NColor {current color}
@@ -62,6 +72,32 @@ TestRenderer: class extends NRenderer {
 	    return NSize new(
 	        info@ as StructSDLVideoInfo currentW as NFloat,
 	        info@ as StructSDLVideoInfo currentH as NFloat)
+	}
+	
+	loadFont: func (url: String, ptsize: Int, bold, italic: Bool) -> NFont {
+	    face: FTFace
+	    if (ftlib newFace(url, 0, face&) != 0)
+	        Exception new(This, "Unable to load font face at `%s`" format(url)) throw()
+	    
+	    faceIdx := 1
+	    faces := face@ num_faces
+	    while (!(bold == face isBold?() && italic == face isItalic?()) && faceIdx < faces) {
+	        face done()
+	        if (ftlib newFace(url, faceIdx, face&) != 0)
+    	        Exception new(This, "Unable to load font face at `%s`" format(url)) throw()
+    	    faceIdx += 1
+	    }
+	    if (!(bold == face isBold?() && italic == face isItalic?())) {
+	        face done()
+	        Exception new(This, "Unable to load font face at `%s` with requested style (bold:%d italic:%d)" format(url, bold, italic)) throw()
+	    }
+	    
+	    face setPixelSizes(0, ptsize)
+	    
+	    fnt := NFont new(url, ptsize, bold, italic)
+	    fnt data = TestFontData new(ptsize, face)
+	    
+	    return fnt
 	}
     
     loadImage: func (url: String) -> NImage {
