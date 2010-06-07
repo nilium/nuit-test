@@ -198,7 +198,7 @@ TestFontData: class extends NFontData {
         while (pgSize < minsz) pgSize <<= 1
     }
     
-    _getGlyph: func(chr: ULong) -> FontGlyph {
+    getGlyph: func(chr: ULong) -> FontGlyph {
         glyph := glyphs get(chr)
         if (!glyph) {
             glyph = FontGlyph new(this, chr)
@@ -249,7 +249,7 @@ TestFontData: class extends NFontData {
         Returns whether or not the font can render the given character.
     */
     supportsGlyph: func (chr: ULong) -> Bool {
-        _getGlyph(chr) drawable?()
+        getGlyph(chr) drawable?()
     }
 
     /**
@@ -259,7 +259,7 @@ TestFontData: class extends NFontData {
         provided for that glyph.
     */
     glyphSize: func (chr: ULong) -> NSize {
-        _getGlyph(chr) size
+        getGlyph(chr) size
     }
 
     /**
@@ -267,7 +267,7 @@ TestFontData: class extends NFontData {
         character to follow the glyph without kerning.
     */
     glyphAdvance: func (chr: ULong) -> NPoint {
-        _getGlyph(chr) advance
+        getGlyph(chr) advance
     }
 
     /**
@@ -285,7 +285,7 @@ TestFontData: class extends NFontData {
         Returns the relative offset of the glyph from the baseline.
     */
     glyphBearing: func (chr: ULong) -> NPoint {
-        _getGlyph(chr) bearing
+        getGlyph(chr) bearing
     }
 
     /**
