@@ -15,9 +15,11 @@ To build this, you'll need a few things:
 * `ooc-sdl`_
 * `ooc-sdl_image`_
 * `ooc-glew`_
+* `ooc-freetype2`_
 * SDL_
 * SDL_Image_ (and any libraries it requires, such as libz, libpng, etc.)
 * GLEW_
+* FreeType2_
 * `window.png`_ from `NUIT.gfx`_ (or create your own two-frame window image)
 
 Under Mac OS, you'll also have to link the Cocoa and OpenGL frameworks.  I've
@@ -58,12 +60,22 @@ sort of code that's good enough to 'steal' (so to speak).
  OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE 
  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+Credits
+-------
+
+Hopefully this satisfies the credit clause for the FreeType project...
+
+Portions of this software are copyright © 2010 The FreeType Project
+(www.freetype.org).  All rights reserved.
+
 .. _`nuit-ooc`: http://github.com/nilium/nuit-ooc
 .. _`ooc-sdl`: http://github.com/nilium/ooc-sdl
 .. _`ooc-sdl_image`: http://github.com/nilium/ooc-sdl_image
 .. _`ooc-glew`: http://github.com/OneSadCookie/ooc-glew
+.. _`ooc-freetype2`: http://github.com/nilium/ooc-freetype2
 .. _SDL: http://libsdl.org/
 .. _`SDL_image`: http://www.libsdl.org/projects/SDL_image
+.. _FreeType2: http://www.freetype.org/
 .. _GLEW: http://glew.sourceforge.net/
 .. _`NUIT.gfx`: http://github.com/nilium/NUIT.gfx
 .. _`window.png`: http://github.com/nilium/NUIT.gfx/blob/master/window.png
