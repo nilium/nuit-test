@@ -75,28 +75,8 @@ TestRenderer: class extends NRenderer {
 	}
 	
 	loadFont: func (url: String, ptsize: Int, bold, italic: Bool) -> NFont {
-	    face: FTFace
-	    if (ftlib newFace(url, 0, face&) != 0)
-	        Exception new(This, "Unable to load font face at `%s`" format(url)) throw()
-	    
-	    faceIdx := 1
-	    faces := face@ num_faces
-	    while (!(bold == face isBold?() && italic == face isItalic?()) && faceIdx < faces) {
-	        face done()
-	        if (ftlib newFace(url, faceIdx, face&) != 0)
-    	        Exception new(This, "Unable to load font face at `%s`" format(url)) throw()
-    	    faceIdx += 1
-	    }
-	    if (!(bold == face isBold?() && italic == face isItalic?())) {
-	        face done()
-	        Exception new(This, "Unable to load font face at `%s` with requested style (bold:%d italic:%d)" format(url, bold, italic)) throw()
-	    }
-	    
-	    face setPixelSizes(0, ptsize)
-	    
 	    fnt := NFont new(url, ptsize, bold, italic)
-	    fnt data = TestFontData new(ptsize, face)
-	    
+	    _loadFont(fnt)
 	    return fnt
 	}
     
@@ -113,6 +93,32 @@ TestRenderer: class extends NRenderer {
         img frameSize = frameSize
         img frameCount = frameCount
         return img
+    }
+    
+    _loadFont: func (font: NFont) {
+        url := font url
+        bold := font bold
+        italic := font italic
+        face: FTFace
+	    if (ftlib newFace(url, 0, face&) != 0)
+	        Exception new(This, "Unable to load font face at `%s`" format(url)) throw()
+	    
+	    faceIdx := 1
+	    faces := face@ num_faces
+	    while (!(bold == face isBold?() && italic == face isItalic?()) && faceIdx < faces) {
+	        face done()
+	        if (ftlib newFace(url, faceIdx, face&) != 0)
+    	        Exception new(This, "Unable to load font face at `%s`" format(url)) throw()
+    	    faceIdx += 1
+	    }
+	    if (!(bold == face isBold?() && italic == face isItalic?())) {
+	        face done()
+	        Exception new(This, "Unable to load font face at `%s` with requested style (bold:%d italic:%d)" format(url, bold, italic)) throw()
+	    }
+	    
+	    face setPixelSizes(0, font size)
+	    
+	    font data = TestFontData new(font size, face)
     }
     
     _bufferImage: func (image: NImage) {
@@ -281,6 +287,30 @@ TestRenderer: class extends NRenderer {
     disableClipping: func {
 	    current clipped = false
 	    if (0 < acquired) current apply(this)
+	}
+	
+	drawText: func (text: String, font: NFont, point: NPoint) {
+	    if (font == null)
+	        return
+	    
+	    if (font data == null || !font data instanceOf(TestFontData))
+	        _loadFont(font)
+	    
+	    data := font data as TestFontData
+	    
+	    lastChr: ULong = 0
+	    iter := text iterator()
+	    while (iter hasNext()) {
+	        chr := iter next()
+	        
+	        kerned := point
+	        kerned add(data glyphKerning(lastChr, chr))
+	        glyph := data getGlyph(chr)
+	        glyph draw(this, kerned)
+	        point x += glyph advance x
+	        
+	        lastChr = chr
+	    }
 	}
     
 }
