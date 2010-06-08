@@ -38,15 +38,14 @@ main: func(argc: Int, argv: String*) {
     // gui setup
     
     gui := NGUI new()
-    gui makeActive()
     
     rd := TestRenderer new()
     gui setRenderer(rd)
     
-    windowImage := rd loadImageWithFrames("window.png", NSize new(256.0, 256.0), 2)
+    windowImage := NImage new(gui, "window.png", NSize new(256.0, 256.0), 2)
     windowDrawable := NNinePatchDrawable new(windowImage, NSize new(5.0, 24.0), NSize new(5.0, 5.0), 1.0)
     
-    wnd := NFramedWindow new(NRect new(25.0, 64.0, 512.0, 256.0))
+    wnd := NFramedWindow new(gui, NRect new(25.0, 64.0, 512.0, 256.0))
     // until skins are added, this unfortunately has to be done for every window
     // (because I'm still faffing about with yajl and trying to avoid rolling
     // my own parser for my own format)
@@ -54,10 +53,10 @@ main: func(argc: Int, argv: String*) {
     // don't ask me why I haven't ported addWindow yet.
     gui _windows add(wnd)
     
-    wnd = NFramedWindow new(NRect new(25.0, 64.0, 512.0, 256.0))
+    wnd = NFramedWindow new(gui, NRect new(25.0, 64.0, 512.0, 256.0))
     wnd _drawable = windowDrawable
     gui _windows add(wnd)
-    wnd addSubview(TestView new(NRect new(24.0, 24.0, 128.0, 80.0)))
+    wnd addSubview(TestView new(gui, NRect new(24.0, 24.0, 128.0, 80.0)))
     
     while (running) {
         

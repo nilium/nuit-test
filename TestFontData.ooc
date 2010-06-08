@@ -135,10 +135,14 @@ GlyphPage: class {
     init: func(=width, =height) {
         penabled, ptex: Int
         glGetBooleanv(GL_TEXTURE_2D, penabled&)
+        glGetIntegerv(GL_TEXTURE_BINDING_2D, ptex&)
         if (!penabled)
             glEnable(GL_TEXTURE_2D)
         
-        glGetIntegerv(GL_TEXTURE_BINDING_2D, ptex&)
+        pRedBias: Float
+        glGetFloatv(GL_RED_BIAS, pRedBias&)
+        glPixelTransferf(GL_RED_BIAS, 1.0)
+        
         nm: UInt
         glGenTextures(1, nm&)
         name = nm
@@ -147,7 +151,9 @@ GlyphPage: class {
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE)
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE)
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_ALPHA8, width, height, 0, GL_ALPHA, GL_UNSIGNED_BYTE, null)
+        
+        buf := gc_malloc(width*height)
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_ALPHA8, width, height, 0, GL_ALPHA, GL_UNSIGNED_BYTE, buf)
         
         glBindTexture(GL_TEXTURE_2D, ptex)
         if (!penabled)
@@ -295,9 +301,16 @@ TestFontData: class extends NFontData {
     }
 
     /**
-        Returns the font's baseline.
+        Returns the font's ascender.
     */
-    baseLine: func -> NFloat {
-        (face@ ascender/64) as NFloat
+    ascender: func -> NFloat {
+        face@ size@ metrics ascender toFloat()
+    }
+    
+    /**
+        Returns the font's descender.
+    */
+    descender: func -> NFloat {
+        face@ size@ metrics descender toFloat()
     }
 }

@@ -2,7 +2,7 @@ use nuit, sdl, sdl_image, glew, freetype2
 
 import nuit/[Types, Renderer, Image, Font]
 
-import structs/[Stack]
+import structs/[Stack, HashMap]
 
 import freetype2
 import sdl
@@ -13,10 +13,11 @@ import TestFontData
 
 /** IMAGE DATA **/
 TestImageData: class extends NImageData {
-    _name: UInt
-    _size: NSize
+    url: String
+    name: UInt
+    size: NSize
     
-    size: func -> NSize {_size}
+    size: func -> NSize {size}
 }
 
 
@@ -74,25 +75,14 @@ TestRenderer: class extends NRenderer {
 	        info@ as StructSDLVideoInfo currentH as NFloat)
 	}
 	
-	loadFont: func (url: String, ptsize: Int, bold, italic: Bool) -> NFont {
-	    fnt := NFont new(url, ptsize, bold, italic)
+	loadFont: func (fnt: NFont) -> Bool {
 	    _loadFont(fnt)
-	    return fnt
+	    return true
 	}
     
-    loadImage: func (url: String) -> NImage {
-        img := NImage new(url)
+    loadImage: func (img: NImage) -> Bool {
         _bufferImage(img)
-        img frameSize = img size()
-        img frameCount = 1
-        return img
-    }
-    
-    loadImageWithFrames: func (url: String, frameSize: NSize, frameCount: Int) -> NImage {
-        img := loadImage(url)
-        img frameSize = frameSize
-        img frameCount = frameCount
-        return img
+        return true
     }
     
     _loadFont: func (font: NFont) {
@@ -116,22 +106,35 @@ TestRenderer: class extends NRenderer {
 	        Exception new(This, "Unable to load font face at `%s` with requested style (bold:%d italic:%d)" format(url, bold, italic)) throw()
 	    }
 	    
-	    face setPixelSizes(0, font size)
+	    height := font height()
+	    face setPixelSizes(0, height)
 	    
-	    font data = TestFontData new(font size, face)
+	    font data = TestFontData new(height, face)
     }
     
+    _bufferedImages := HashMap<String, TestImageData> new(32)
     _bufferImage: func (image: NImage) {
-        if (image data != null && image data instanceOf(TestImageData))
+        if (image url == null || image data != null && image data instanceOf(TestImageData))
             return
         
-        data := TestImageData new()
+        data := _bufferedImages get(image url)
+        if (data) {
+            "Using cached image data for `%s`" format(data url) println()
+            image data = data
+            return
+        }
+        
+        data = TestImageData new()
+        
+        data url = image url clone()
+        data renderer = this
+        
         surf := imgLoad(image url)
         if (surf == null) {
             Exception new(This, "Couldn't load image at \""+image url+"\"") throw()
         }
         sdlLockSurface(surf)
-        data _size set(surf@ as StructSDLSurface w as NFloat, surf@ as StructSDLSurface h as NFloat)
+        data size set(surf@ as StructSDLSurface w as NFloat, surf@ as StructSDLSurface h as NFloat)
         fmt := surf@ as StructSDLSurface format@ as StructSDLPixelFormat
         glFormat := GL_RGBA
         components := 4
@@ -151,17 +154,19 @@ TestRenderer: class extends NRenderer {
         }
         
         glEnable(GL_TEXTURE_2D)
-        glGenTextures(1, data _name&)
-        glBindTexture(GL_TEXTURE_2D, data _name)
+        glGenTextures(1, data name&)
+        glBindTexture(GL_TEXTURE_2D, data name)
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE)
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE)
             
-        glTexImage2D(GL_TEXTURE_2D, 0, components, data _size width as Int, data _size height as Int, 0, glFormat, GL_UNSIGNED_BYTE, surf@ as StructSDLSurface pixels)
+        glTexImage2D(GL_TEXTURE_2D, 0, components, data size width as Int, data size height as Int, 0, glFormat, GL_UNSIGNED_BYTE, surf@ as StructSDLSurface pixels)
         image data = data
         sdlUnlockSurface(surf)
         sdlFreeSurface(surf)
+        
+        _bufferedImages put(image url, data)
     }
     
     saveState: func {
@@ -237,7 +242,7 @@ TestRenderer: class extends NRenderer {
 	    _bufferImage(image)
 	    
 	    glEnable(GL_TEXTURE_2D)
-	    glBindTexture(GL_TEXTURE_2D, image data as TestImageData _name)
+	    glBindTexture(GL_TEXTURE_2D, image data as TestImageData name)
 	    
 	    inRect origin add(current origin)
 	    inRect origin add(NSize min(inRect size, NSize zero()) toPoint())
