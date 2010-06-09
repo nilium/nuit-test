@@ -101,7 +101,7 @@ FontGlyph: class {
             glEnable(GL_TEXTURE_2D)
         glPixelStorei(GL_UNPACK_ALIGNMENT, 1)
         glPixelStorei(GL_UNPACK_ROW_LENGTH, bmp pitch)
-        glPixelTransferf(GL_RED_BIAS, -1.0)
+        glPixelTransferf(GL_RED_BIAS, 1.0)
         
         glBindTexture(GL_TEXTURE_2D, page name)
         
@@ -158,6 +158,12 @@ GlyphPage: class {
         glBindTexture(GL_TEXTURE_2D, ptex)
         if (!penabled)
             glDisable(GL_TEXTURE_2D)
+        
+        glPixelTransferf(GL_RED_BIAS, pRedBias)
+    }
+    
+    dispose: func {
+        glDeleteTextures(1, name&)
     }
     
     canFit?: func (sz: NSize) -> Bool {
@@ -195,12 +201,20 @@ TestFontData: class extends NFontData {
     glyphs := HashMap<ULong, FontGlyph> new(128)
     pages := ArrayList<GlyphPage> new(8)
     
-    init: func(=size, =face) {
+    init: func(renderer: NRenderer, =size, =face) {
+        super(renderer)
         // NOTE: this does not work well with unreasonably large font sizes
         // (larger than 128px is probably not going to yield very good results)
         pgSize = 256
         minsz := (size+2)*8
         while (pgSize < minsz) pgSize <<= 1
+    }
+    
+    dispose: func {
+        face done()
+        glyphs clear()
+        for (page: GlyphPage in pages)
+            page dispose()
     }
     
     getGlyph: func(chr: ULong) -> FontGlyph {

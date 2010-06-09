@@ -2,7 +2,7 @@ use nuit, sdl, sdl_image, glew, freetype2
 
 import nuit/[Types, Renderer, Image, Font]
 
-import structs/[Stack, HashMap]
+import structs/[Stack, HashMap, LinkedList]
 
 import freetype2
 import sdl
@@ -17,7 +17,13 @@ TestImageData: class extends NImageData {
     name: UInt
     size: NSize
     
+    init: super func
+    
     size: func -> NSize {size}
+    
+    dispose: func {
+        glDeleteTextures(1, name&)
+    }
 }
 
 
@@ -48,7 +54,7 @@ TestRenderer: class extends NRenderer {
     states: Stack<TestRenderState>
     current: TestRenderState
     acquired: Int = 0
-    ftlib: FTLibrary
+    ftlib: FTLibrary = null
     
     init: func {
         states = Stack<TestRenderState> new()
@@ -58,8 +64,24 @@ TestRenderer: class extends NRenderer {
             Exception new(This, "Unable to init FreeType2") throw()
     }
     
+    dispose: func {
+        if (ftlib != null) {
+            ftlib done()
+            ftlib = null
+        }
+        
+        for (fnt: TestFontData in _bufferedFonts)
+            fnt dispose()
+        _bufferedFonts clear()
+        
+        for (img: TestImageData in _bufferedImages)
+            img dispose()
+        _bufferedImages clear()
+    }
+    
     __destroy__: func {
-        ftlib done()
+        if (ftlib != null)
+            ftlib done()
     }
     
     fillColor: func -> NColor {current color}
@@ -76,15 +98,21 @@ TestRenderer: class extends NRenderer {
 	}
 	
 	loadFont: func (fnt: NFont) -> Bool {
+	    if (fnt data && fnt data renderer() == this)
+            return true
+	    
 	    _loadFont(fnt)
 	    return true
 	}
     
     loadImage: func (img: NImage) -> Bool {
+        if (img data && img data renderer() == this)
+            return true
         _bufferImage(img)
         return true
     }
     
+    _bufferedFonts := LinkedList<TestFontData> new()
     _loadFont: func (font: NFont) {
         url := font url
         bold := font bold
@@ -109,14 +137,12 @@ TestRenderer: class extends NRenderer {
 	    height := font height()
 	    face setPixelSizes(0, height)
 	    
-	    font data = TestFontData new(height, face)
+	    font data = TestFontData new(this, height, face)
+	    _bufferedFonts add(font data)
     }
     
     _bufferedImages := HashMap<String, TestImageData> new(32)
     _bufferImage: func (image: NImage) {
-        if (image url == null || image data != null && image data instanceOf(TestImageData))
-            return
-        
         data := _bufferedImages get(image url)
         if (data) {
             "Using cached image data for `%s`" format(data url) println()
@@ -124,10 +150,9 @@ TestRenderer: class extends NRenderer {
             return
         }
         
-        data = TestImageData new()
+        data = TestImageData new(this)
         
         data url = image url clone()
-        data renderer = this
         
         surf := imgLoad(image url)
         if (surf == null) {
@@ -139,11 +164,11 @@ TestRenderer: class extends NRenderer {
         glFormat := GL_RGBA
         components := 4
         if (fmt bitsPerPixel == 32) {
-            if (fmt rmask != 0xff000000)
+            if (fmt rmask != 0x000000ff)
                 glFormat = GL_BGRA
         } else if (fmt bitsPerPixel == 24) {
             components = 3
-            if (fmt rmask == 0xff000000)
+            if (fmt rmask == 0x000000ff)
                 glFormat = GL_RGB
             else
                 glFormat = GL_BGR
@@ -239,7 +264,10 @@ TestRenderer: class extends NRenderer {
 	}
 	
 	drawSubimage: func (image: NImage, frame: Int, subimage, inRect: NRect) {
-	    _bufferImage(image)
+	    if (!loadImage(image))
+	        return
+	        
+        frame = frame % image frames()
 	    
 	    glEnable(GL_TEXTURE_2D)
 	    glBindTexture(GL_TEXTURE_2D, image data as TestImageData name)
@@ -298,8 +326,10 @@ TestRenderer: class extends NRenderer {
 	    if (font == null)
 	        return
 	    
-	    if (font data == null || !font data instanceOf(TestFontData))
-	        _loadFont(font)
+	    if (!loadFont(font))
+	        return
+	    
+	    point add(current origin)
 	    
 	    data := font data as TestFontData
 	    
