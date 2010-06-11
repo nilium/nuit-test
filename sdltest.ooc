@@ -2,13 +2,37 @@ use nuit
 use sdl
 use glew
 
-import nuit/[GUI, Types, Image, Renderer, FramedWindow, NinePatchDrawable]
+import os/Time
+import nuit/[GUI, Types, Image, Font, Renderer, FramedWindow, NinePatchDrawable, Button]
 
 import sdl
 import glew
 
 import TestRenderer
 import TestView
+
+gluPerspective: extern func (fovy, aspect, znear, zfar: Double)
+gluLookAt: extern func (eyeX, eyeY, eyeZ, centerX, centerY, centerZ, upX, upY, upZ: Double)
+
+initGLState: func (w, h: Int) {
+    glClearColor(0.4, 0.4, 0.4, 1.0)
+    
+    glMatrixMode(GL_PROJECTION)
+    glLoadIdentity()
+    
+    gluPerspective(80.0, w as Float / h, 1.0, 60.0)
+    //glOrtho(-w * 0.01, w * 0.01, -h * 0.01, h * 0.01, -10.0, 10.0)
+    
+    glMatrixMode(GL_MODELVIEW)
+    glLoadIdentity()
+    glTranslatef(0, 0, -8)
+    //gluLookAt(0.0, 0.0, -30.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0)
+    
+    glAlphaFunc(GL_ALWAYS, 1.0)
+    glDepthFunc(GL_ALWAYS)
+    
+    glViewport(0, 0, w, h)
+}
 
 /*** The Wooperton Plaza ***/
 
@@ -20,20 +44,14 @@ main: func(argc: Int, argv: String*) {
     // sdl setup
     
     sdlInit(EnumSDLInitFlags initVideo)
-    mainSurface := sdlSetVideoMode(800, 600, 32, EnumSDLSurfaceFlags opengl as UInt32 | EnumSDLGlattr doublebuffer as UInt32)
+    mainSurface := sdlSetVideoMode(800, 600, 32, EnumSDLSurfaceFlags opengl as UInt32 | EnumSDLGlattr doublebuffer as UInt32 | EnumSDLSurfaceFlags resizable as UInt32)
     if (mainSurface == null) {
         Exception new("Unable to set video mode") throw()
     }
     
     // gl setup
     glewInit()
-    
-    glClearColor(0.4, 0.4, 0.4, 1.0)
-    
-    glMatrixMode(GL_PROJECTION)
-    glLoadIdentity()
-    glMatrixMode(GL_MODELVIEW)
-    glLoadIdentity()
+    initGLState(800, 600)
     
     // gui setup
     
@@ -44,6 +62,7 @@ main: func(argc: Int, argv: String*) {
     
     windowImage := NImage new(gui, "window.png", NSize new(256.0, 256.0), 2)
     windowDrawable := NNinePatchDrawable new(windowImage, NSize new(5.0, 24.0), NSize new(5.0, 5.0), 1.0)
+    buttonDrawable := NNinePatchDrawable new(NImage new(gui, "button.png", NSize new(64.0, 64.0), 4), NSize new(10.0, 10.0), NSize new(10.0, 10.0), 1.0)
     
     wnd := NFramedWindow new(gui, NRect new(25.0, 64.0, 512.0, 256.0)).
         setCaption("Wooperton").
@@ -53,10 +72,28 @@ main: func(argc: Int, argv: String*) {
     gui _windows add(wnd)
     
     wnd = NFramedWindow new(gui, NRect new(25.0, 64.0, 512.0, 256.0)).
-        setCaption("Razzle Dazzle Rootbeer").
-        setDrawable(windowDrawable).
-        addSubview(TestView new(gui, NRect new(24.0, 24.0, 128.0, 80.0)))
+           setCaption("Razzle Dazzle Rootbeer").
+           setDrawable(windowDrawable).
+           addSubview(NButton new(gui, NRect new(24.0, 24.0, 128.0, 80.0)).
+                       setDrawable(buttonDrawable).
+                       setCaption("Suck Green Frogs").
+                       addEventHandler(NButtonPressedEvent, || "Button pressed!" println())
+                     ) // addSubview
     gui _windows add(wnd)
+    gui setViewFont(NFont new(gui, "HelveticaNeue.ttc", 12, false, false))
+    
+    pointsArr := [
+    //  x  y  z
+        3, 3, 3,
+        3, 3, -3,
+        -3, 3, -3,
+        -3, 3, 3,
+        3, -3, 3,
+        3, -3, -3,
+        -3, -3, -3,
+        -3, -3, 3
+    ]
+    points := pointsArr data as Int*
     
     while (running) {
         
@@ -87,6 +124,16 @@ main: func(argc: Int, argv: String*) {
                     mousePosition y = event as UnionSDLEvent motion as StructSDLMouseMotionEvent y
                     gui pushMouseMoveEvent(mousePosition)
                 
+                case EnumSDLEventType videoresize =>
+                    w := event as UnionSDLEvent resize as StructSDLResizeEvent w
+                    h := event as UnionSDLEvent resize as StructSDLResizeEvent h
+                    
+                    rd dispose()
+                    mainSurface = sdlSetVideoMode(w, h, 32, EnumSDLSurfaceFlags opengl as UInt32 | EnumSDLGlattr doublebuffer as UInt32 | EnumSDLSurfaceFlags resizable as UInt32 | EnumSDLSurfaceFlags hwSurface as UInt32)
+                    rd = TestRenderer new()
+                    gui setRenderer(rd)
+                    initGLState(w, h)
+                    
                 case =>
                     continue
             }
@@ -94,7 +141,29 @@ main: func(argc: Int, argv: String*) {
 //            Exception new(null, "Error in sdlWaitEvent") throw()
         }
         
-        glClear(GL_COLOR_BUFFER_BIT)
+//        "millisec: %D  microsec: %d  microtime: %D" format(Time millisec(), Time microsec(), Time microtime()) println()
+        
+        glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT)
+        
+        // cube thingy begin
+        glRotatef(0.01, 0.1, 0.2, 0.3)
+        glLineWidth(2.0)
+        
+        glBegin(GL_LINE_STRIP)
+            glColor3f(1.0, 1.0, 1.0)
+            for (i: Int in 0..4) glVertex3iv(points+(i*3))
+            glVertex3iv(points)
+            for (i: Int in 0..4) glVertex3iv(points+12+(i*3))
+            glVertex3iv(points+12)
+        glEnd()
+        
+        glBegin(GL_LINES)
+            for (i: Int in 1..4) {
+                glVertex3iv(points+3*i)
+                glVertex3iv(points+12+3*i)
+            }
+        glEnd()
+        // cube thingy end
         
         gui draw()
         
