@@ -2,8 +2,9 @@ use nuit
 use sdl
 use glew
 
+import structs/LinkedList
 import os/Time
-import nuit/[GUI, Types, Image, Font, Renderer, FramedWindow, NinePatchDrawable, Button]
+import nuit/[GUI, Types, Image, Font, Renderer, FramedWindow, Drawable, NinePatchDrawable, PaddedDrawable, ImageDrawable, MultiDrawable, View, Button, Skin, Checkbox, ScrollBar, ScrollView, Window, Popup]
 
 import sdl
 import glew
@@ -62,25 +63,64 @@ main: func(argc: Int, argv: String*) {
     
     windowImage := NImage new(gui, "window.png", NSize new(256.0, 256.0), 2)
     windowDrawable := NNinePatchDrawable new(windowImage, NSize new(5.0, 24.0), NSize new(5.0, 5.0), 1.0)
-    buttonDrawable := NNinePatchDrawable new(NImage new(gui, "button.png", NSize new(64.0, 64.0), 4), NSize new(10.0, 10.0), NSize new(10.0, 10.0), 1.0)
+    cbDrawable := NImageDrawable new(NImage new(gui, "checkbox.png", NSize new(16.0, 16.0), 5))
+    rbDrawable := NImageDrawable new(NImage new(gui, "radiobox.png", NSize new(64.0, 64.0), 5))
+    btnDrawable := NNinePatchDrawable new(NImage new(gui, "button.png", NSize new(64.0, 64.0), 4), NSize new(10.0), NSize new(10.0), 1.0)
+    vscrollDrawable := NNinePatchDrawable new(NImage new(gui, "vscroll.png", NSize new(100.0, 200.0), 2), NSize new(15.0), NSize new(15.0), 0.2)
+    hscrollDrawable := NNinePatchDrawable new(NImage new(gui, "hscroll.png", NSize new(200.0, 100.0), 2), NSize new(15.0), NSize new(15.0), 0.2)
+    vscPadDrawable := NImageDrawable new(NImage new(gui, "scrolldragger.png"), NImageScaling fillAspect, NImageAlignment center)
+    vscDragDrawable := NNinePatchDrawable new(NImage new(gui, "vdragger.png", NSize new(100.0, 200.0), 2), NSize new(15.0), NSize new(15.0), 0.2)
+    lst := LinkedList<NDrawable> new(). add(vscDragDrawable). add(vscPadDrawable)
+    vscDrawable := NMultiDrawable new(lst)
     
-    wnd := NFramedWindow new(gui, NRect new(25.0, 64.0, 512.0, 256.0)).
-        setCaption("Wooperton").
-        setDrawable(windowDrawable)
+    hscPadDrawable := NImageDrawable new(NImage new(gui, "hscrolldragger.png"), NImageScaling fillAspect, NImageAlignment center)
+    hscDragDrawable := NNinePatchDrawable new(NImage new(gui, "hdragger.png", NSize new(200.0, 100.0), 2), NSize new(15.0), NSize new(15.0), 0.2)
+    lst = LinkedList<NDrawable> new(). add(hscDragDrawable). add(hscPadDrawable)
+    hscDrawable := NMultiDrawable new(lst)
     
-    // don't ask me why I haven't ported addWindow yet.
-    gui _windows add(wnd)
+    skin := NBasicSkin new().
+        addDrawable("Shadow", NNinePatchDrawable new(NImage new(gui, "shadow.png"), NSize new(14.0, 14.0), NSize new(14.0, 14.0), 1.0)).
+        addDrawable("FramedWindow", windowDrawable).
+        addDrawable("VerticalScrollBar", vscrollDrawable).
+        addDrawable("HorizontalScrollBar", hscrollDrawable).
+        addDrawable("Radiobox", rbDrawable).
+        addDrawable("Checkbox", cbDrawable).
+        addDrawable("Button", btnDrawable).
+        addFont("DefaultFont", NFont new(gui, "HelveticaNeue.ttc", 12, false, false)).
+        addSize("FramedWindowResizer", NSize new(20.0)).
+        addDrawable("VerticalScrollBarScrubber", vscDrawable).
+        addDrawable("HorizontalScrollBarScrubber", hscDrawable)
     
-    wnd = NFramedWindow new(gui, NRect new(25.0, 64.0, 512.0, 256.0)).
-           setCaption("Razzle Dazzle Rootbeer").
-           setDrawable(windowDrawable).
-           addSubview(NButton new(gui, NRect new(24.0, 24.0, 128.0, 80.0)).
-                       setDrawable(buttonDrawable).
-                       setCaption("Suck Green Frogs").
-                       addEventHandler(NButtonPressedEvent, || "Button pressed!" println())
-                     ) // addSubview
-    gui _windows add(wnd)
-    gui setViewFont(NFont new(gui, "HelveticaNeue.ttc", 12, false, false))
+    gui setSkin(skin)
+    
+    scr := NScrollView new(gui, NRect new(168.0, 24.0, 180.0, 180.0))
+    scr retainCorner = false
+    scr setContentView(NView new(gui, NSize new(512.0, 512.0) toRect()))
+    scr contentView() addSubview(NRadiobox new(gui, NRect new(24.0, 24.0, 64.0, 16.0)).
+                                  setCaption("Radio 1")
+                                ). // addSubview
+                      addSubview(NRadiobox new(gui, NRect new(96.0, 24.0, 64.0, 16.0)).
+                                  setCaption("Radio 2")
+                                ). // addSubview
+                      addSubview(NRadiobox new(gui, NRect new(168.0, 24.0, 64.0, 16.0)).
+                                  setCaption("Radio 3")
+                                ). // addSubview
+                      addSubview(NCheckbox new(gui, NRect new(24.0, 48.0, 64.0, 16.0)).
+                                  setCaption("Check 1")
+                                ).
+                      addSubview(NCheckbox new(gui, NRect new(96.0, 48.0, 64.0, 16.0)).
+                                  setCaption("Check 2")
+                                ).
+                      addSubview(NCheckbox new(gui, NRect new(168.0, 48.0, 64.0, 16.0)).
+                                  setCaption("Check 3")
+                                ).
+                      addSubview(NButton new(gui, NRect new(24.0, 72.0, 128.0, 30.0)).
+                                  setCaption("A button"))
+    
+    fwnd := NFramedWindow new(gui, NRect new(60.0, 30.0, 512.0, 256.0))
+    fwnd as NFramedWindow setCaption("Razzle Dazzle Rootbeer").
+           setContentView(scr)
+    gui addWindow(fwnd)
     
     pointsArr := [
     //  x  y  z
