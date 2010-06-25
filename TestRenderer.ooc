@@ -33,6 +33,7 @@ TestRenderState: cover {
     drawing_region: NRect
     origin: NPoint
     clipped := false
+    scale := NSize new(1.0, 1.0)
     
     apply: func (rend: NRenderer) {
         if (clipped) {
@@ -60,6 +61,7 @@ TestRenderer: class extends NRenderer {
         states = Stack<TestRenderState> new()
         current drawing_region size = screenSize()
         current color = NColor white()
+        current scale = 1.0 as NSize
         if (ftlib initFreeType() != 0)
             Exception new(This, "Unable to init FreeType2") throw()
     }
@@ -272,7 +274,6 @@ TestRenderer: class extends NRenderer {
 	    glEnable(GL_TEXTURE_2D)
 	    glBindTexture(GL_TEXTURE_2D, image data as TestImageData name)
 	    
-	    inRect origin add(current origin)
 	    inRect origin add(NSize min(inRect size, NSize zero()) toPoint())
 	    inRect size width = inRect size width abs()
 	    inRect size height = inRect size height abs()
@@ -292,6 +293,13 @@ TestRenderer: class extends NRenderer {
 	    subimage origin y *= isize height
 	    subimage size width *= isize width
 	    subimage size height *= isize height
+	    
+	    inRect origin x *= current scale width
+	    inRect origin y *= current scale height
+	    inRect size width *= current scale width
+	    inRect size height *= current scale height
+	    
+	    inRect origin add(current origin)
 	    
         glBegin(GL_QUADS)
         glColor4fv(current color red&)
@@ -329,7 +337,7 @@ TestRenderer: class extends NRenderer {
 	    if (!loadFont(font))
 	        return
 	    
-	    point add(current origin)
+	    point = point * scale() + current origin
 	    
 	    data := font data as TestFontData
 	    
@@ -339,13 +347,18 @@ TestRenderer: class extends NRenderer {
 	        chr := iter next()
 	        
 	        kerned := point
-	        kerned add(data glyphKerning(lastChr, chr))
+	        kerned add(data glyphKerning(lastChr, chr) * scale())
 	        glyph := data getGlyph(chr)
 	        glyph draw(this, kerned)
-	        point x += glyph advance x
+	        point x += glyph advance x * scale() width
 	        
 	        lastChr = chr
 	    }
 	}
     
+    setScale: func (scale: NSize) {
+        current scale = scale
+    }
+    
+    scale: func -> NSize { current scale }
 }

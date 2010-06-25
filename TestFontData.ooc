@@ -41,8 +41,8 @@ FontGlyph: class {
             return
         }
         
-        origin add(bearing)
-        loc := NRect new(origin, size)
+        origin add(bearing * renderer scale())
+        loc := NRect new(origin, size * renderer scale())
         
         glEnable(GL_TEXTURE_2D)
         glBindTexture(GL_TEXTURE_2D, page name)
