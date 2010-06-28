@@ -4,7 +4,10 @@ use glew
 
 import structs/LinkedList
 import os/Time
-import nuit/[GUI, Types, Image, Font, Renderer, FramedWindow, Drawable, NinePatchDrawable, PaddedDrawable, ImageDrawable, MultiDrawable, View, Button, Skin, Checkbox, ScrollBar, ScrollView, Window, Popup]
+import nuit/[GUI, Types, Image, Font, Renderer, FramedWindow, Drawable,
+            NinePatchDrawable, PaddedDrawable, ImageDrawable, MultiDrawable,
+            View, Button, Skin, Checkbox, ScrollBar, ScrollView, Window,
+            Radiobox]
 
 import sdl
 import glew
