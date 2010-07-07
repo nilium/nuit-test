@@ -1,4 +1,4 @@
-import nuit/[Types, Renderer, View]
+import Types, Renderer, View
 
 TestView: class extends NView {
     init: super func

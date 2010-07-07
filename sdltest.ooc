@@ -4,10 +4,9 @@ use glew
 
 import structs/LinkedList
 import os/Time
-import nuit/[GUI, Types, Image, Font, Renderer, FramedWindow, Drawable,
-            NinePatchDrawable, PaddedDrawable, ImageDrawable, MultiDrawable,
-            View, Button, Skin, Checkbox, ScrollBar, ScrollView, Window,
-            Radiobox]
+import GUI, Types, Image, Font, Renderer, FramedWindow, Drawable,
+       NinePatchDrawable, PaddedDrawable, ImageDrawable, MultiDrawable, View,
+       Button, Skin, Checkbox, ScrollBar, ScrollView, Window, Radiobox
 
 import sdl
 import glew
@@ -47,8 +46,8 @@ main: func(argc: Int, argv: String*) {
     
     // sdl setup
     
-    sdlInit(EnumSDLInitFlags initVideo)
-    mainSurface := sdlSetVideoMode(800, 600, 32, EnumSDLSurfaceFlags opengl as UInt32 | EnumSDLGlattr doublebuffer as UInt32 | EnumSDLSurfaceFlags resizable as UInt32)
+    sdlInit(SDLInitFlags video)
+    mainSurface := sdlSetVideoMode(800, 600, 32, SDLVideoFlags opengl | SDLVideoFlags doubleBuffer | SDLVideoFlags resizable)
     if (mainSurface == null) {
         Exception new("Unable to set video mode") throw()
     }
@@ -145,34 +144,34 @@ main: func(argc: Int, argv: String*) {
 //        if (sdlWaitEvent(event&)) {
         while (sdlPollEvent(event&)) {
             match (event as UnionSDLEvent type) {
-                case EnumSDLEventType quit => running = false
+                case SDLEventType quit => running = false
                 
-                case EnumSDLEventType mousebuttonup =>
+                case SDLEventType mousebuttonup =>
                     // mousePosition set(event button x, event button y)
                     mousePosition x = event as UnionSDLEvent button as StructSDLMouseButtonEvent x
                     mousePosition y = event as UnionSDLEvent button as StructSDLMouseButtonEvent y
                     button := event as UnionSDLEvent button as StructSDLMouseButtonEvent button as Int
                     gui pushMouseReleasedEvent(button, mousePosition)
                     
-                case EnumSDLEventType mousebuttondown =>
+                case SDLEventType mousebuttondown =>
                     // mousePosition set(event button x, event button y)
                     mousePosition x = event as UnionSDLEvent button as StructSDLMouseButtonEvent x
                     mousePosition y = event as UnionSDLEvent button as StructSDLMouseButtonEvent y
                     button := event as UnionSDLEvent button as StructSDLMouseButtonEvent button as Int
                     gui pushMousePressedEvent(button, mousePosition)
                     
-                case EnumSDLEventType mousemotion =>
+                case SDLEventType mousemotion =>
                     // mousePosition set(event motion x, event motion y)
                     mousePosition x = event as UnionSDLEvent motion as StructSDLMouseMotionEvent x
                     mousePosition y = event as UnionSDLEvent motion as StructSDLMouseMotionEvent y
                     gui pushMouseMoveEvent(mousePosition)
                 
-                case EnumSDLEventType videoresize =>
+                case SDLEventType videoresize =>
                     w := event as UnionSDLEvent resize as StructSDLResizeEvent w
                     h := event as UnionSDLEvent resize as StructSDLResizeEvent h
                     
                     rd dispose()
-                    mainSurface = sdlSetVideoMode(w, h, 32, EnumSDLSurfaceFlags opengl as UInt32 | EnumSDLGlattr doublebuffer as UInt32 | EnumSDLSurfaceFlags resizable as UInt32 | EnumSDLSurfaceFlags hwSurface as UInt32)
+                    mainSurface = sdlSetVideoMode(w, h, 32, SDLVideoFlags opengl | SDLVideoFlags doubleBuffer | SDLVideoFlags resizable)
                     rd = TestRenderer new()
                     gui setRenderer(rd)
                     initGLState(w, h)
@@ -210,7 +209,7 @@ main: func(argc: Int, argv: String*) {
         
         gui draw()
         
-        sdlGlSwapBuffers()
+        sdlGLSwapBuffers()
     }
     
     sdlQuit()

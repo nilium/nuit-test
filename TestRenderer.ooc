@@ -1,6 +1,6 @@
 use nuit, sdl, sdl_image, glew, freetype2
 
-import nuit/[Types, Renderer, Image, Font]
+import Types, Renderer, Image, Font
 
 import structs/[Stack, HashMap, LinkedList]
 
@@ -140,7 +140,7 @@ TestRenderer: class extends NRenderer {
 	    face setPixelSizes(0, height)
 	    
 	    font data = TestFontData new(this, height, face)
-	    _bufferedFonts add(font data)
+	    _bufferedFonts add(font data as TestFontData)
     }
     
     _bufferedImages := HashMap<String, TestImageData> new(32)

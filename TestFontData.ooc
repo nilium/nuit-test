@@ -1,7 +1,7 @@
 use nuit, glew, freetype2
 
 import structs/[HashMap, ArrayList]
-import nuit/[Renderer, Types, Font]
+import Renderer, Types, Font
 
 import glew
 import freetype2
